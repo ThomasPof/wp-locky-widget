@@ -103,6 +103,12 @@ class Locky_API {
             $display_start = date('Y-m-d H:i:s', $final_start_date / 1000);
             $display_end   = date('Y-m-d H:i:s', $final_end_date / 1000);
 
+            // envoi du SMS via SMSFactor
+            $sms_sent = self::lk_send_sms_notification($client_phone, $client_name, $json['keyboardPwd'], $display_start, $display_end);
+            if (!$sms_sent) {
+                error_log('Locky SMS Error: Échec de l\'envoi du SMS pour le code d\'accès. Numéro: ' . $client_phone);
+            }
+
             /**
              * ENREGISTREMENT EN BDD DE LA RÉSERVATION BRUTE
              */
@@ -177,19 +183,76 @@ class Locky_API {
         return [$final_start_date, $final_end_date, $display_start, $display_end];
     }
 
+    /**
+     * Envoie le code d'accès par SMS via l'API de SMSFactor
+     *
+     * @param string $phone     Numéro de téléphone du destinataire (format international ex: +33612345678)
+     * @param string $name      Nom/Prénom du client
+     * @param string $code      Code généré par TTLock
+     * @param string $startDate Date de début formatée (ex: jeudi 6 juillet 2026)
+     * @param string $endDate   Date de fin formatée
+     * @return bool             True si envoyé avec succès, false sinon
+     */
     public static function lk_send_sms_notification($phone, $name, $code, $startDate, $endDate) {
-        // Exemple conceptuel avec un webhook ou un fournisseur SMS (ex: SMSFactor, Twilio...)
-        $sms_url = 'https://api.votre-fournisseur-sms.com/send';
+        // 1. Récupération du jeton API (à ajouter dans tes réglages, ou via une constante)
+        // Par sécurité, nous pouvons réutiliser un champ option ou définir une constante temporaire
+        $api_token = LK_SMSFACTOR_TOKEN; // À configurer dans les options du plugin
 
-        $body = [
-            'to'      => $phone,
-            'message' => "Bonjour {$name}, votre code d'accès éphémère pour le cadenas est : {$code}. Il est valide du {$startDate} au {$endDate}."
-        ];
+        if (empty($api_token)) {
+            error_log('Locky SMS Error: Jeton API SMSFactor manquant ou non configuré.');
+            return false;
+        }
 
-        wp_remote_post($sms_url, [
-            'headers' => [ 'Authorization' => 'Bearer VOTRE_API_KEY_SMS' ],
-            'body'    => $body
+        // clean phone number (remove spaces, dashes, etc.)
+        $phone = preg_replace('/\D+/', '', $phone);
+        // add 33 if the number starts with 06 or 07 and doesn't already have +33
+        if (preg_match('/^0[67]\d{8}$/', $phone)) {
+            $phone = '33' . substr($phone, 1);
+        }
+
+        // URL officielle de l'API v3 de SMSFactor pour l'envoi de SMS uniques
+        $sms_url = 'https://api.smsfactor.com/send';
+
+        // 2. Formatage du texte du message (Attention aux 160 caractères par SMS standard)
+        $message_text = sprintf(
+            "Bonjour %s, votre code d'acces pour le cadenas est : %s. Valide du %s au %s.",
+            $name,
+            $code,
+            $startDate,
+            $endDate
+        );
+
+        // 4. Construction de l'URL finale avec les paramètres GET requis
+
+        $sms_url = add_query_arg([
+            'text'  => $message_text,
+            'to'    => $phone,
+            'token' => $api_token
+        ], 'https://api.smsfactor.com/send');
+
+        // Optionnel : Si tu veux ajouter l'émetteur personnalisé, l'API GET de SMSFactor utilise généralement le paramètre 'sender'
+        // $sms_url = add_query_arg('sender', 'LOCKY', $sms_url);
+
+        // 5. Envoi de la requête GET via WordPress
+        $response = wp_remote_get($sms_url, [
+            'timeout' => 15
         ]);
+
+        // 5. Analyse de la réponse et logs en cas d'échec
+        if (is_wp_error($response)) {
+            error_log('Locky SMS cURL Error: ' . $response->get_error_message());
+            return false;
+        }
+
+        $response_code = wp_remote_retrieve_response_code($response);
+        $response_body = json_decode(wp_remote_retrieve_body($response), true);
+
+        if ($response_code === 200 && isset($response_body['status']) && $response_body['status'] === 'OK') {
+            return true; // SMS envoyé avec succès !
+        } else {
+            error_log('Locky SMS API Error: Code ' . $response_code . ' - ' . print_r($response_body, true));
+            return false;
+        }
     }
 
     public static function handle_verify_availability($lock_id, $start_raw, $duration_days) {

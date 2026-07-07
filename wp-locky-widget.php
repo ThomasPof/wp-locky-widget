@@ -16,6 +16,7 @@ define('LK_CLIENT_ID',       get_option('lk_client_id', ''));
 define('LK_CLIENT_SECRET',   get_option('lk_client_secret', ''));
 define('LK_LOCKY_USERNAME',  get_option('lk_username', ''));
 define('LK_LOCKY_PASSWORD',  get_option('lk_password', ''));
+define('LK_SMSFACTOR_TOKEN', get_option('lk_smsfactor_token', ''));
 
 // Inclusion de la classe logique
 require_once LK_PLUGIN_DIR . 'includes/class-locky-api.php';

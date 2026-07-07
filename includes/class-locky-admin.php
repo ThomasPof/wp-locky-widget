@@ -49,6 +49,7 @@ class Locky_Admin {
         register_setting('locky_settings_group', 'lk_client_secret');
         register_setting('locky_settings_group', 'lk_username');
         register_setting('locky_settings_group', 'lk_password');
+        register_setting('locky_settings_group', 'lk_smsfactor_token');
     }
 
     /**
@@ -93,6 +94,13 @@ class Locky_Admin {
                         <td>
                             <input type="password" id="lk_password" name="lk_password" value="<?php echo esc_attr(get_option('lk_password')); ?>" class="regular-text">
                             <p class="description">Le mot de passe sera masqué pour des raisons de sécurité.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="lk_smsfactor_token">Token SMSFactor</label></th>
+                        <td>
+                            <input type="text" id="lk_smsfactor_token" name="lk_smsfactor_token" value="<?php echo esc_attr(get_option('lk_smsfactor_token')); ?>" class="regular-text">
+                            <p class="description">Le token SMSFactor est utilisé pour l'envoi des codes par SMS. Assurez-vous de l'avoir configuré correctement.</p>
                         </td>
                     </tr>
                 </table>

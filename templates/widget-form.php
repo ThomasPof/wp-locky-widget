@@ -27,7 +27,13 @@
 
                 <div class="lk-form-group" style="margin-bottom: 12px;">
                     <label for="lk-clientPhone">Numéro de téléphone :</label>
-                    <input type="tel" id="lk-clientPhone" name="clientPhone" style="width:100%;" placeholder="+33612345678" required>
+                    <input type="tel"
+                        id="lk-clientPhone"
+                        name="clientPhone"
+                        style="width:100%;"
+                        placeholder="0612345678"
+                        pattern="[0-9]{10}"
+                        required>
                     <p style="font-size: 0.85em; color: #64748b;">Le code du cadenas vous sera envoyé par SMS.</p>
                 </div>
 
