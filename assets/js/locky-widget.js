@@ -128,9 +128,17 @@ const LockyWidget = {
             this.elements.resultBox.style.display = "block";
             if (data.success) {
                 this.elements.resultBox.innerHTML = `
-                    Votre code : <strong>${data.code}</strong><br>
+                    Votre code vous a été envoyé par SMS : <strong>${data.code}</strong><br>
                     <small>Valide du ${data.startDate} au ${data.endDate}</small>
                 `;
+                // get all events (with new reservation) and re-render the calendar
+                fetch(`${this.baseUrl}get-all-reservations`).then(res => res.json())
+                .then(reservationsData => {
+                    if (reservationsData.success) {
+                        this.initFullCalendar(reservationsData.reservations);
+                    }
+                });
+
             } else {
                 this.elements.resultBox.textContent = data.error || "Erreur de génération.";
             }
@@ -148,6 +156,9 @@ const LockyWidget = {
      * UI : Gère l'état de chargement du bouton submit
      */
     setSubmitState(isLoading) {
+        this.elements.lockForm.style.pointerEvents = isLoading ? "none" : "auto";
+        this.elements.lockForm.style.opacity = isLoading ? "0.6" : "1";
+        this.elements.lockForm.style.cursor = isLoading ? "not-allowed" : "default";
         this.elements.submitBtn.disabled = isLoading;
         this.elements.submitBtn.textContent = isLoading ? "Génération..." : "Obtenir mon code d'accès";
     },
@@ -159,6 +170,7 @@ const LockyWidget = {
         if (this.elements.bookingModal) this.elements.bookingModal.style.display = 'none';
         if (this.elements.resultBox) this.elements.resultBox.style.display = 'none';
         this.elements.lockForm.reset();
+        this.setSubmitState(false);
     },
 
     /**
@@ -215,7 +227,6 @@ const LockyWidget = {
 
         calendar.render();
     },
-
     /**
      * Génération de la légende des puces de couleur
      */
