@@ -206,6 +206,8 @@ const LockyWidget = {
             events: events,
             height: 'auto',
             dateClick: (info) => {
+                const dayElement = info.dayEl;
+                if(dayElement.classList.contains('fc-day-past')) return; // Ignore les jours passés
                 if (this.elements.startDateInput) this.elements.startDateInput.value = info.dateStr;
                 if (this.elements.bookingModal) this.elements.bookingModal.style.display = 'flex';
             }

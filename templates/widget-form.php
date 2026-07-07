@@ -28,6 +28,7 @@
                 <div class="lk-form-group" style="margin-bottom: 12px;">
                     <label for="lk-clientPhone">Numéro de téléphone :</label>
                     <input type="tel" id="lk-clientPhone" name="clientPhone" style="width:100%;" placeholder="+33612345678" required>
+                    <p style="font-size: 0.85em; color: #64748b;">Le code du cadenas vous sera envoyé par SMS.</p>
                 </div>
 
                 <div class="lk-form-group" style="margin-bottom: 12px;">
@@ -74,15 +75,12 @@
         border: none !important;
     }
 
-    /* Change le curseur et ajoute un fond gris clair sur les cases des jours au survol */
-    .fc .fc-daygrid-day:hover {
+    .fc .fc-daygrid-day:not(.fc-day-past):hover {
         cursor: pointer;
         background-color: #f1f5f9 !important; /* Couleur gris bleuté très léger au hover */
     }
 
-    /* Optionnel : Si tu veux aussi changer la couleur au survol des jours qui sont déjà réservés (les événements) */
-    .fc-event:hover {
-        filter: brightness(0.9); /* Assombrit légèrement la couleur du badge au survol */
-        cursor: pointer;
+    .fc-daygrid-day-events {
+        pointer-events: none; /* Empêche les événements d'interférer avec le hover sur les jours */
     }
     </style>
