@@ -292,12 +292,51 @@ class Locky_API {
 
         // Récupération des réservations futures ET de celles terminées depuis moins de 30 jours
         $results = $wpdb->get_results($wpdb->prepare(
-            "SELECT lock_id, start_date, duration_days, client_name, client_phone
+            "SELECT id, lock_id, start_date, duration_days, client_name, client_phone
              FROM $table_name
              WHERE DATE_ADD(start_date, INTERVAL duration_days DAY) >= DATE_SUB(%s, INTERVAL 30 DAY)",
             $today
         ));
 
         return new WP_REST_Response(['success' => true, 'reservations' => $results], 200);
+    }
+
+    /**
+     * Tente d'annuler une réservation via la vérification du code généré
+     */
+    public static function handle_cancel_reservation(WP_REST_Request $request) {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'locky_reservations';
+
+        $reservation_id = intval($request->get_param('id'));
+        $user_code      = sanitize_text_field($request->get_param('code'));
+
+        if (!$reservation_id || empty($user_code)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Données incomplètes.'], 400);
+        }
+
+        // 1. On cherche la réservation pour vérifier le code
+        $reservation = $wpdb->get_row($wpdb->prepare(
+            "SELECT generated_code FROM $table_name WHERE id = %d",
+            $reservation_id
+        ));
+
+        if (!$reservation) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Réservation introuvable.'], 404);
+        }
+
+        // 2. Vérification stricte du code d'accès
+        if (trim($reservation->generated_code) !== trim($user_code)) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Le code saisi est incorrect.'], 403);
+        }
+
+        // 3. Suppression
+        $deleted = $wpdb->delete($table_name, ['id' => $reservation_id], ['%d']);
+
+        if ($deleted) {
+            return new WP_REST_Response(['success' => true, 'message' => 'Réservation annulée avec succès.'], 200);
+        }
+
+        return new WP_REST_Response(['success' => false, 'error' => 'Erreur lors de la suppression en base de données.'], 500);
     }
 }

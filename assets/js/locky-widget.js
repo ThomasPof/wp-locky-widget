@@ -41,7 +41,13 @@ const LockyWidget = {
             legendEl:       document.getElementById('lk-calendar-legend'),
             bookingModal:   document.getElementById('lk-booking-modal'),
             closeModal:     document.getElementById('lk-close-modal'),
-            startDateInput: document.getElementById('lk-startDate')
+            startDateInput: document.getElementById('lk-startDate'),
+            cancelModal:       document.getElementById('lk-cancel-modal'),
+            closeCancelModal:  document.getElementById('lk-close-cancel-modal'),
+            cancelForm:        document.getElementById('lk-cancel-form'),
+            cancelResIdInput:  document.getElementById('lk-cancel-res-id'),
+            cancelCodeInput:   document.getElementById('lk-cancel-code'),
+            cancelResultBox:   document.getElementById('lk-cancelResultBox'),
         };
     },
 
@@ -62,7 +68,15 @@ const LockyWidget = {
             if (e.target === this.elements.bookingModal) {
                 this.closeBookingModal();
             }
+            if (e.target === this.elements.cancelModal) {
+                this.closeCancelModal();
+            }
         });
+
+        if (this.elements.closeCancelModal) {
+            this.elements.closeCancelModal.addEventListener('click', () => this.closeCancelModal());
+        }
+        this.elements.cancelForm.addEventListener('submit', (e) => this.handleCancelSubmit(e));
     },
 
     /**
@@ -198,6 +212,7 @@ const LockyWidget = {
             endDate.setDate(startDate.getDate() + (parseInt(res.duration_days) || 1));
 
             return {
+                id: res.id, // CRUCIAL : On passe l'ID SQL de la réservation
                 title: res.client_name + (res.client_phone ? ` (${res.client_phone})` : ''),
                 start: res.start_date,
                 end: endDate.toISOString().split('T')[0],
@@ -222,9 +237,35 @@ const LockyWidget = {
                 if(dayElement.classList.contains('fc-day-past')) return; // Ignore les jours passés
                 if (this.elements.startDateInput) this.elements.startDateInput.value = info.dateStr;
                 if (this.elements.bookingModal) this.elements.bookingModal.style.display = 'flex';
+            },
+
+            // AJOUT : Injection HTML personnalisée du bouton de suppression dans le badge de l'événement
+            eventContent: function(arg) {
+                let titleEl = document.createElement('span');
+                titleEl.textContent = arg.event.title;
+
+                let deleteBtn = document.createElement('span');
+                deleteBtn.innerHTML = '×'; // Ou '×' si tu préfères une croix
+                deleteBtn.className = 'lk-delete-btn';
+                deleteBtn.title = 'Annuler cette réservation';
+
+                // On intercepte le clic sur la poubelle pour éviter qu'il déclenche d'autres actions
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    LockyWidget.openCancelModal(arg.event.id);
+                });
+
+                let arrayOfNodes = [titleEl, deleteBtn];
+                return { domNodes: arrayOfNodes };
+            },
+            eventClick: function(info) {
+                LockyWidget.openCancelModal(info.event.id);
+                // On peut éventuellement afficher une modale d'info sur la réservation ici
+                // Mais on ne fait rien pour l'instant
             }
         });
 
+        this.calendarInstance = calendar; // On garde une copie de l'instance pour refresh plus tard
         calendar.render();
     },
     /**
@@ -248,6 +289,64 @@ const LockyWidget = {
             labelWrapper.appendChild(pastille);
             labelWrapper.appendChild(label);
             this.elements.legendEl.appendChild(labelWrapper);
+        });
+    },
+
+    // 4. Ajoute les méthodes d'UI et de soumission Ajax d'annulation à la suite de ton objet
+    openCancelModal(reservationId) {
+        if (!reservationId) return;
+        this.elements.cancelResIdInput.value = reservationId;
+        this.elements.cancelModal.style.display = 'flex';
+    },
+
+    closeCancelModal() {
+        this.elements.cancelModal.style.display = 'none';
+        this.elements.cancelResultBox.style.display = 'none';
+        this.elements.cancelForm.reset();
+    },
+
+    handleCancelSubmit(e) {
+        e.preventDefault();
+
+        const resId = this.elements.cancelResIdInput.value;
+        const code  = document.getElementById('lk-cancelCode').value;
+
+        this.elements.cancelResultBox.style.display = "block";
+        this.elements.cancelResultBox.style.backgroundColor = "#f1f5f9";
+        this.elements.cancelResultBox.style.color = "#334155";
+        this.elements.cancelResultBox.textContent = "Vérification...";
+
+        fetch(`${this.baseUrl}cancel-reservation`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `id=${resId}&code=${encodeURIComponent(code)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                this.elements.cancelResultBox.style.backgroundColor = "#dcfce7";
+                this.elements.cancelResultBox.style.color = "#166534";
+                this.elements.cancelResultBox.textContent = "Réservation annulée ! Le calendrier se met à jour...";
+
+                // Retrait dynamique de l'événement sur le calendrier sans recharger la page
+                if (this.calendarInstance) {
+                    const eventToTarget = this.calendarInstance.getEventById(resId);
+                    if (eventToTarget) eventToTarget.remove();
+                }
+
+                setTimeout(() => this.closeCancelModal(), 2000);
+            } else {
+                this.elements.cancelResultBox.style.backgroundColor = "#fee2e2";
+                this.elements.cancelResultBox.style.color = "#991b1b";
+                this.elements.cancelResultBox.textContent = data.error || "Une erreur est survenue.";
+            }
+        })
+        .catch(() => {
+            this.elements.cancelResultBox.style.backgroundColor = "#fee2e2";
+            this.elements.cancelResultBox.style.color = "#991b1b";
+            this.elements.cancelResultBox.textContent = "Erreur de communication avec le serveur.";
         });
     }
 };

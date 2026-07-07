@@ -41,6 +41,11 @@ add_action('rest_api_init', function () {
         'callback'            => ['Locky_API', 'handle_get_all_reservations'],
         'permission_callback' => '__return_true',
     ]);
+    register_rest_route('locky-widget/v1', '/cancel-reservation', [
+        'methods'             => 'POST',
+        'callback'            => ['Locky_API', 'handle_cancel_reservation'],
+        'permission_callback' => '__return_true', // Accessible publiquement
+    ]);
 });
 
 // Déclaration du Shortcode
