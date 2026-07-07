@@ -13,6 +13,8 @@ class Locky_Admin {
         add_action('admin_menu', [__CLASS__, 'add_admin_menu']);
         add_action('admin_init', [__CLASS__, 'register_locky_settings']);
         add_action('admin_init', [__CLASS__, 'handle_delete_reservation']);
+
+        add_action('admin_enqueue_scripts', [__CLASS__, 'enqueue_admin_assets']);
     }
 
     /**
@@ -179,7 +181,9 @@ class Locky_Admin {
                                 <td><code>#<?php echo esc_html($res->id); ?></code></td>
                                 <td><strong><?php echo esc_html($res->client_name); ?></strong></td>
                                 <td><?php echo esc_html($res->client_phone ? $res->client_phone : '—'); ?></td>
-                                <td><code><?php echo esc_html($res->lock_id); ?></code></td>
+                                <td class="lk-lock-id" data-lock-id="<?php echo esc_attr($res->lock_id); ?>">
+                                    <code><?php echo esc_html($res->lock_id); ?></code>
+                                </td>
                                 <td><code><?php echo esc_html($res->start_date); ?></code></td>
                                 <td><?php echo esc_html($res->duration_days); ?> jour<?php echo $res->duration_days > 1 ? 's' : ''; ?></td>
                                 <td><span class="notice notice-success" style="padding: 3px 8px; font-weight: bold; font-family: monospace; font-size: 1.1em; display: inline-block; margin: 0;"><?php echo esc_html($res->generated_code); ?></span></td>
@@ -205,5 +209,25 @@ class Locky_Admin {
             </table>
         </div>
         <?php
+    }
+
+    /**
+     * Enregistre et charge le script JS pour l'administration
+     */
+    public static function enqueue_admin_assets($hook) {
+        // On charge le script uniquement si on est sur la page de l'historique ou des réglages Locky
+        if (strpos($hook, 'locky-reservations') === false && strpos($hook, 'locky-settings') === false) {
+            return;
+        }
+
+        // Enregistre ton nouveau fichier JS admin
+        wp_register_script('locky-admin-js', LK_PLUGIN_URL . 'assets/js/locky-admin.js', [], '1.0.0', true);
+
+        // Passe l'URL de l'API REST de manière sécurisée au JS
+        wp_localize_script('locky-admin-js', 'lockyAdminData', [
+            'root_url' => esc_url_raw(rest_url('locky-widget/v1/'))
+        ]);
+
+        wp_enqueue_script('locky-admin-js');
     }
 }
