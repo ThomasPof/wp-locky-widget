@@ -2,11 +2,11 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 
 <div class="locky-widget-container">
-    <div id="lk-initial-loading">Chargement des cadenas...</div>
+    <div id="lk-initial-loading">Chargement du calendrier...</div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-    <div class="lk-widget-container" id="lk-global-calendar-wrapper" style="margin-top: 25px;">
+    <div class="lk-calendar-container" id="lk-global-calendar-wrapper" style="margin-top: 25px; display: none;">
         <h4 style="margin-top:0; margin-bottom:10px;">Calendrier des biplaces</h4>
         <div id="lk-calendar-legend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; font-size: 0.85em;"></div>
         <div id="lk-calendar-component"></div>

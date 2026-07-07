@@ -36,6 +36,7 @@ const LockyWidget = {
             initialLoading: document.getElementById("lk-initial-loading"),
             resultBox:      document.getElementById("lk-resultBox"),
             submitBtn:      document.getElementById("lk-submitBtn"),
+            lockCalendar:   document.getElementById("lk-global-calendar-wrapper"),
             calendarEl:     document.getElementById('lk-calendar-component'),
             legendEl:       document.getElementById('lk-calendar-legend'),
             bookingModal:   document.getElementById('lk-booking-modal'),
@@ -68,22 +69,25 @@ const LockyWidget = {
      * Chargement séquentiel des données (Cadenas puis Réservations)
      */
     loadWidgetData() {
-        fetch(`${this.baseUrl}list-locks`)
-            .then(res => res.json())
-            .then(data => this.populateLockSelect(data))
-            .then(() => fetch(`${this.baseUrl}get-all-reservations`))
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    this.initFullCalendar(data.reservations);
-                }
-            })
-            .catch(err => {
-                console.error("Locky Error:", err);
-                if (this.elements.initialLoading) {
-                    this.elements.initialLoading.textContent = "Erreur de chargement du widget.";
-                }
-            });
+        // On lance les deux fetch en même temps
+        Promise.all([
+            fetch(`${this.baseUrl}list-locks`).then(res => res.json()),
+            fetch(`${this.baseUrl}get-all-reservations`).then(res => res.json())
+        ])
+        .then(([locksData, reservationsData]) => {
+            // 1. On traite d'abord la liste des cadenas pour hydrater "this.lockNames"
+            this.populateLockSelect(locksData);
+
+            // 2. On initialise le calendrier (qui a maintenant accès aux noms via "this.lockNames")
+            if (reservationsData.success) {
+                this.initFullCalendar(reservationsData.reservations);
+            }
+            this.elements.initialLoading.style.display = "none";
+        })
+        .catch(err => {
+            console.error("Locky Error:", err);
+            this.elements.initialLoading.textContent = "Erreur de chargement du widget.";
+        });
     },
 
     /**
@@ -102,9 +106,6 @@ const LockyWidget = {
             this.lockNames[lock.lockId] = option.textContent;
             this.elements.lockSelect.appendChild(option);
         });
-
-        this.elements.initialLoading.style.display = "none";
-        this.elements.lockForm.style.display = "block";
     },
 
     /**
@@ -176,6 +177,8 @@ const LockyWidget = {
      */
     initFullCalendar(reservations) {
         if (!this.elements.calendarEl || typeof FullCalendar === 'undefined') return;
+
+        this.elements.lockCalendar.style.display = 'block'; // Affiche le calendrier une fois les données prêtes
 
         const events = reservations.map(res => {
             const startDate = new Date(res.start_date);
