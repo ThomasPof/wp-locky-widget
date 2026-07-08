@@ -88,6 +88,7 @@ function lk_activate_locky_plugin() {
         start_date date NOT NULL,
         duration_days int(3) NOT NULL,
         generated_code varchar(50) NOT NULL,
+        generated_code_id varchar(50) NOT NULL,
         created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
         PRIMARY KEY  (id)
     ) $charset_collate;";

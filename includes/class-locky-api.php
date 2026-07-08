@@ -123,7 +123,8 @@ class Locky_API {
                     'client_phone'  => $client_phone,
                     'start_date'    => $start_raw,     // Enregistre "YYYY-MM-DD"
                     'duration_days' => $duration_days, // Enregistre l'entier (1 à 3)
-                    'generated_code'=> $json['keyboardPwd']
+                    'generated_code'=> $json['keyboardPwd'],
+                    'generated_code_id' => $json['keyboardPwdId']
                 ],
                 [
                     '%s', // lock_id
@@ -131,7 +132,8 @@ class Locky_API {
                     '%s', // client_phone
                     '%s', // start_date (format date standard)
                     '%d', // duration_days
-                    '%s'  // generated_code
+                    '%s', // generated_code
+                    '%s'  // generated_code_id
                 ]
             );
 
@@ -317,7 +319,7 @@ class Locky_API {
 
         // 1. On cherche la réservation pour vérifier le code
         $reservation = $wpdb->get_row($wpdb->prepare(
-            "SELECT generated_code FROM $table_name WHERE id = %d",
+            "SELECT generated_code, generated_code_id, lock_id FROM $table_name WHERE id = %d",
             $reservation_id
         ));
 
@@ -330,13 +332,67 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Le code saisi est incorrect.'], 403);
         }
 
+        // revocation du code sur TTLock
+        $revoked = self::lk_revoke_ttlock_code($reservation->lock_id, $reservation->generated_code_id);
+        if (!$revoked) {
+            return new WP_REST_Response(['success' => false, 'error' => 'Échec de la révocation du code sur TTLock.'], 500);
+        }
+
         // 3. Suppression
         $deleted = $wpdb->delete($table_name, ['id' => $reservation_id], ['%d']);
 
         if ($deleted) {
+            // Révocation du code sur TTLock
             return new WP_REST_Response(['success' => true, 'message' => 'Réservation annulée avec succès.'], 200);
         }
 
         return new WP_REST_Response(['success' => false, 'error' => 'Erreur lors de la suppression en base de données.'], 500);
+    }
+
+    /**
+     * Révoque un code d'accès directement sur l'API TTLock via son ID unique
+     *
+     * @param string $lock_id             L'ID du cadenas
+     * @param string $generated_code_id   L'ID du code d'accès renvoyé par TTLock (keyboardPwdId)
+     * @return bool                       True si la révocation a réussi, false sinon
+     */
+    public static function lk_revoke_ttlock_code($lock_id, $generated_code_id) {
+        $token = self::get_access_token();
+        if (!$token) {
+            error_log('Locky TTLock Revocation Error: Impossible de récupérer le token d\'accès.');
+            return false;
+        }
+
+        // Endpoint officiel de TTLock pour la suppression définitive d'un code
+        $url = 'https://api.ttlock.com/v3/keyboardPwd/delete';
+
+        // Construction du payload attendu par TTLock
+        $body = [
+            'clientId'      => LK_CLIENT_ID,
+            'accessToken'   => $token,
+            'lockId'        => $lock_id,
+            'keyboardPwdId' => $generated_code_id, // Utilisation de l'ID officiel du code
+            'date'          => current_time('timestamp') * 1000 // Timestamp en millisecondes requis par TTLock
+        ];
+
+        $response = wp_remote_post($url, [
+            'timeout' => 15,
+            'body'    => $body
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('Locky TTLock Revocation Error: ' . $response->get_error_message());
+            return false;
+        }
+
+        $res_body = json_decode(wp_remote_retrieve_body($response), true);
+
+        // errcode 0 = Succès chez TTLock
+        if (isset($res_body['errcode']) && $res_body['errcode'] === 0) {
+            return true;
+        }
+
+        error_log('Locky TTLock Revocation API Refusal: ' . print_r($res_body, true));
+        return false;
     }
 }

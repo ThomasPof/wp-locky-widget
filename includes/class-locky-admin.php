@@ -129,6 +129,15 @@ class Locky_Admin {
         $table_name = $wpdb->prefix . 'locky_reservations';
         $reservation_id = intval($_GET['id']);
 
+        $reservation = $wpdb->get_row($wpdb->prepare(
+            "SELECT generated_code_id, lock_id FROM $table_name WHERE id = %d",
+            $reservation_id
+        ));
+
+        if ($reservation) {
+            Locky_API::lk_revoke_ttlock_code($reservation->lock_id, $reservation->generated_code_id);
+        }
+
         $wpdb->delete($table_name, ['id' => $reservation_id], ['%d']);
 
         wp_safe_redirect(admin_url('admin.php?page=locky-reservations&deleted=true'));
