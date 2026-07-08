@@ -163,7 +163,7 @@ class Locky_API {
 
         $today = date('Y-m-d');
         // prise des bi de 16h la veille et retour avant 11h
-        $late_delay = 11 * 3600 * 1000; // 11 heures en millisecondes
+        $late_delay = 9 * 3600 * 1000; // 9 heures en millisecondes
         $early_delay = 8 * 3600 * 1000; // 8 heures en millisecondes
 
         // Calcul de la date de fin (toujours +12h après la fin du séjour)
