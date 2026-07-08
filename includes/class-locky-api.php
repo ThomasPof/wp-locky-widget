@@ -162,13 +162,13 @@ class Locky_API {
         date_default_timezone_set('Europe/Paris');
 
         $today = date('Y-m-d');
-        // prise des bi de 16h la veille et retour avant 11h
-        $late_delay = 9 * 3600 * 1000; // 9 heures en millisecondes
-        $early_delay = 8 * 3600 * 1000; // 8 heures en millisecondes
+        // prise des bi de 16h (-8h) la veille et retour avant 9h
+        $end_offset = 9 * 3600 * 1000; // 9 heures en millisecondes
+        $start_offset = 8 * 3600 * 1000; // 8 heures en millisecondes
 
         // Calcul de la date de fin (toujours +12h après la fin du séjour)
         $end_timestamp_ms = strtotime($start_raw . " +{$duration_days} days 00:00:00") * 1000;
-        $final_end_date   = $end_timestamp_ms + $late_delay;
+        $final_end_date   = $end_timestamp_ms + $end_offset;
 
         if ($start_raw === $today) {
             // SCÉNARIO AUJOURD'HUI : Pas de marge de -12h, juste "maintenant" arrondi
@@ -183,7 +183,7 @@ class Locky_API {
         } else {
             // SCÉNARIO FUTUR : On commence à minuit et on applique la marge de -12h
             $start_timestamp_ms = strtotime($start_raw . ' 00:00:00') * 1000;
-            $final_start_date   = $start_timestamp_ms - $early_delay;
+            $final_start_date   = $start_timestamp_ms - $start_offset;
         }
 
         // Préparation des formats lisibles pour le retour du widget et le SMS
