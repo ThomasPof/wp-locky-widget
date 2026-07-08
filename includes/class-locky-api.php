@@ -126,13 +126,13 @@ class Locky_API {
             $wpdb->insert(
                 $table_name,
                 [
-                    'lock_id'       => $lock_id,
-                    'client_name'   => $client_name,
-                    'client_phone'  => $client_phone,
-                    'start_date'    => $start_raw,     // Enregistre "YYYY-MM-DD"
-                    'duration_days' => $duration_days, // Enregistre l'entier (1 à 3)
-                    'generated_code'=> $json['keyboardPwd'],
-                    'generated_code_id' => $json['keyboardPwdId']
+                    'lock_id'           => sanitize_key($lock_id), // Force un format d'ID propre (lettres, chiffres, tirets)
+                    'client_name'       => sanitize_text_field($client_name),
+                    'client_phone'      => sanitize_text_field($client_phone),
+                    'start_date'        => sanitize_text_field($start_raw),
+                    'duration_days'     => intval($duration_days), // Force un entier strict
+                    'generated_code'    => sanitize_text_field($json['keyboardPwd']),
+                    'generated_code_id' => sanitize_text_field($json['keyboardPwdId'])
                 ],
                 [
                     '%s', // lock_id
@@ -314,12 +314,13 @@ class Locky_API {
     }
 
     /**
-     * Tente d'annuler une réservation via la vérification du code généré
+     * Tente d'annuler une réservation via la vérification sécurisée du code généré
      */
     public static function handle_cancel_reservation(WP_REST_Request $request) {
         global $wpdb;
         $table_name = $wpdb->prefix . 'locky_reservations';
 
+        // Sécurisation des entrées (Casting strict en entier et assainissement textuel)
         $reservation_id = intval($request->get_param('id'));
         $user_code      = sanitize_text_field($request->get_param('code'));
 
@@ -348,16 +349,20 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Échec de la révocation du code sur TTLock.'], 500);
         }
 
-        // 3. Suppression
-        $deleted = $wpdb->delete($table_name, ['id' => $reservation_id], ['%d']);
+        // 3. Suppression sécurisée en limitant la clause WHERE à des formats stricts
+        $deleted = $wpdb->delete(
+            $table_name,
+            ['id' => $reservation_id],
+            ['%d'] // Sécurise le format de l'ID passé en paramètre
+        );
 
         if ($deleted) {
-            // Révocation du code sur TTLock
             return new WP_REST_Response(['success' => true, 'message' => 'Réservation annulée avec succès.'], 200);
         }
 
         return new WP_REST_Response(['success' => false, 'error' => 'Erreur lors de la suppression en base de données.'], 500);
     }
+
 
     /**
      * Révoque un code d'accès directement sur l'API TTLock via son ID unique
