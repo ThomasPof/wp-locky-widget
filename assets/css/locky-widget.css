@@ -37,15 +37,17 @@
     inset: 0;
     z-index: 9999;
     display: none;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 16px;
+    overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.5);
 }
 
 .lk-modal-content {
     position: relative;
     width: 100%;
+    margin: auto;
     padding: 25px;
     background: #ffffff;
     border-radius: 8px;

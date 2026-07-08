@@ -97,7 +97,7 @@ const LockyWidget = {
 		);
 		this.elements.newBookingBtn.addEventListener("click", () => {
 			if (this.elements.bookingModal)
-				this.elements.bookingModal.style.display = "flex";
+				this.openBookingModal();
 		});
 	},
 
@@ -239,6 +239,12 @@ const LockyWidget = {
 		this.elements.cancelResultBox.textContent = message;
 	},
 
+    openBookingModal() {
+        if (this.elements.bookingModal)
+            this.elements.bookingModal.style.display = "flex";
+        document.body.style.overflow = "hidden"; // Empêche le scroll du body quand la modale est ouverte
+    },
+
 	/**
 	 * UI : Fermeture propre de la modale de réservation
 	 */
@@ -251,6 +257,7 @@ const LockyWidget = {
 			this.elements.lockForm.style.display = "block";
 		}
 		this.elements.lockForm.reset();
+        document.body.style.overflow = ""; // Réactive le scroll du body lorsque la modale est fermée
 		this.setSubmitState(false);
 	},
 
@@ -312,7 +319,7 @@ const LockyWidget = {
 				if (this.elements.startDateInput)
 					this.elements.startDateInput.value = info.dateStr;
 				if (this.elements.bookingModal)
-					this.elements.bookingModal.style.display = "flex";
+					this.openBookingModal();
 			},
 
 			// AJOUT : Injection HTML personnalisée du bouton de suppression dans le badge de l'événement
@@ -382,6 +389,7 @@ const LockyWidget = {
 		if (!reservationId) return;
 		this.elements.cancelResIdInput.value = reservationId;
 		this.elements.cancelModal.style.display = "flex";
+        document.body.style.overflow = "hidden"; // Empêche le scroll du body quand la modale est ouverte
 	},
 
 	closeCancelModal() {
@@ -389,6 +397,7 @@ const LockyWidget = {
 		this.resetCancelResultBox();
 		this.elements.cancelForm.reset();
 		this.setSubmitCancelState(false);
+        document.body.style.overflow = ""; // Réactive le scroll du body lorsque la modale est fermée
 	},
 
 	handleCancelSubmit(e) {
