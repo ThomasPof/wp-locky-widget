@@ -372,7 +372,7 @@ class Locky_API {
             'accessToken'   => $token,
             'lockId'        => $lock_id,
             'keyboardPwdId' => $generated_code_id, // Utilisation de l'ID officiel du code
-            'date'          => current_time('timestamp') * 1000 // Timestamp en millisecondes requis par TTLock
+            'date'          => time() * 1000 // Timestamp en millisecondes requis par TTLock
         ];
 
         $response = wp_remote_post($url, [
