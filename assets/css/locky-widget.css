@@ -46,7 +46,7 @@
     position: absolute;
     top: 12px;
     right: 15px;
-    padding: 0;
+    padding: 0 5px;
     border: 0;
     background: transparent;
     color: #64748b;
@@ -57,7 +57,7 @@
 }
 
 .lk-modal-title {
-    margin: 0 0 20px;
+    margin: 0 0 20px !important;
 }
 
 .lk-modal-title--danger {
