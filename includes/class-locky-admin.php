@@ -60,7 +60,7 @@ class Locky_Admin {
     public static function render_settings_page() {
         ?>
         <div class="wrap">
-            <h1>⚙️ Configuration de l'API Locky / TTLock</h1>
+            <h1>Configuration de l'API Locky / TTLock</h1>
             <p class="description">Renseignez ici vos identifiants de l'API TTLock pour permettre au widget de communiquer avec vos cadenas.</p>
 
             <hr class="wp-header-end">
@@ -80,7 +80,7 @@ class Locky_Admin {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="lk_client_secret">Client Secret</label></th>
+                        <th scope="row"><label for="lk_client_secret">Client secret</label></th>
                         <td>
                             <input type="text" id="lk_client_secret" name="lk_client_secret" value="<?php echo esc_attr(get_option('lk_client_secret')); ?>" class="regular-text" autocomplete="off">
                         </td>
@@ -159,7 +159,7 @@ class Locky_Admin {
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Historique des Réservations Locky</h1>
-            <a href="<?php echo admin_url('admin.php?page=locky-settings'); ?>" class="page-title-action">⚙️ Configurer l'API</a>
+            <a href="<?php echo admin_url('admin.php?page=locky-settings'); ?>" class="page-title-action">Configurer l'API</a>
 
             <hr class="wp-header-end">
 
@@ -170,9 +170,9 @@ class Locky_Admin {
                         <th scope="col" style="font-weight: bold;">Nom / Prénom</th>
                         <th scope="col" style="font-weight: bold;">Téléphone</th>
                         <th scope="col" style="font-weight: bold;">Cadenas (ID)</th>
-                        <th scope="col" style="font-weight: bold;">Date Début brute</th>
+                        <th scope="col" style="font-weight: bold;">Date début brute</th>
                         <th scope="col" style="font-weight: bold;">Durée</th>
-                        <th scope="col" style="font-weight: bold;">Code Généré</th>
+                        <th scope="col" style="font-weight: bold;">Code généré</th>
                         <th scope="col" style="font-weight: bold;">Date de demande</th>
                         <th scope="col" style="width: 100px; font-weight: bold; text-align: center;">Actions</th>
                     </tr>

@@ -2,14 +2,20 @@
 <?php if (!defined('ABSPATH')) exit; ?>
 
 <div class="locky-widget-container">
-    <div id="lk-initial-loading">Chargement du calendrier...</div>
+    <div id="lk-initial-loading">
+        <h3>Chargement du calendrier...</h3>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
     <div class="lk-calendar-container" id="lk-global-calendar-wrapper" style="margin-top: 25px; display: none;">
-        <h4 style="margin-top:0; margin-bottom:10px;">Calendrier des biplaces</h4>
         <div id="lk-calendar-legend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; font-size: 0.85em;"></div>
         <div id="lk-calendar-component"></div>
+        <div id="lk-new-booking-btn-wrapper" style="margin-top: 20px; text-align: center;">
+            <button id="lk-new-booking-btn">
+                Réserver un biplace
+            </button>
+        </div>
     </div>
 
     <div id="lk-booking-modal" class="lk-modal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
@@ -94,6 +100,15 @@
         background: #ffffff;
         font-family: inherit;
     }
+    #lk-initial-loading {
+        width: 100%;
+        display: flex;
+        height: 100%;
+        align-items: center;
+        justify-content: center;
+        min-height: 600px;
+        border: 1px solid #dddddd;
+    }
     /* Personnalisation des badges d'événements (réservations) */
     .fc-event {
         cursor: pointer;
@@ -109,7 +124,7 @@
     }
 
     .fc-event-main > span:not(.lk-delete-btn) {
-        width: calc(100% - 30px);
+        width: calc(100% - 20px);
         display: inline-flex;
         overflow: hidden;
     }

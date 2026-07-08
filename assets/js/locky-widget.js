@@ -48,6 +48,7 @@ const LockyWidget = {
             cancelResIdInput:  document.getElementById('lk-cancel-res-id'),
             cancelCodeInput:   document.getElementById('lk-cancel-code'),
             cancelResultBox:   document.getElementById('lk-cancelResultBox'),
+            newBookingBtn:     document.getElementById('lk-new-booking-btn'),
         };
     },
 
@@ -77,6 +78,9 @@ const LockyWidget = {
             this.elements.closeCancelModal.addEventListener('click', () => this.closeCancelModal());
         }
         this.elements.cancelForm.addEventListener('submit', (e) => this.handleCancelSubmit(e));
+        this.elements.newBookingBtn.addEventListener('click', () => {
+            if (this.elements.bookingModal) this.elements.bookingModal.style.display = 'flex';
+        });
     },
 
     /**
@@ -231,17 +235,21 @@ const LockyWidget = {
                 end: endDate.toISOString().split('T')[0],
                 allDay: true,
                 backgroundColor: this.getLockColor(res.lock_id),
-                color: '#ffffff'
+                color: this.getLockColor(res.lock_id)
             };
         });
 
         this.renderLegend();
 
         const calendar = new FullCalendar.Calendar(this.elements.calendarEl, {
-            initialView: 'dayGridMonth',
+            initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
             locale: 'fr',
             firstDay: 1,
-            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: ''
+            },
             buttonText: { today: "Aujourd'hui" },
             events: events,
             height: 'auto',
@@ -275,7 +283,14 @@ const LockyWidget = {
                 LockyWidget.openCancelModal(info.event.id);
                 // On peut éventuellement afficher une modale d'info sur la réservation ici
                 // Mais on ne fait rien pour l'instant
-            }
+            },
+            windowResize: function(arg) {
+                if (window.innerWidth < 768) {
+                    arg.view.calendar.changeView('listMonth'); // Bascule en liste sur mobile
+                } else {
+                    arg.view.calendar.changeView('dayGridMonth'); // Repasse en grille sur desktop
+                }
+            },
         });
 
         this.calendarInstance = calendar; // On garde une copie de l'instance pour refresh plus tard
