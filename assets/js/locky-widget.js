@@ -145,6 +145,7 @@ const LockyWidget = {
                     Votre code vous a été envoyé par SMS : <strong>${data.code}</strong><br>
                     <small>Valide du ${data.startDate} au ${data.endDate}</small>
                 `;
+                this.elements.lockForm.style.display = "none"; // Cache le formulaire après succès
                 // get all events (with new reservation) and re-render the calendar
                 fetch(`${this.baseUrl}get-all-reservations`).then(res => res.json())
                 .then(reservationsData => {
@@ -191,6 +192,10 @@ const LockyWidget = {
     closeBookingModal() {
         if (this.elements.bookingModal) this.elements.bookingModal.style.display = 'none';
         if (this.elements.resultBox) this.elements.resultBox.style.display = 'none';
+        if (this.elements.lockForm) {
+            this.elements.lockForm.reset();
+            this.elements.lockForm.style.display = 'block';
+        }
         this.elements.lockForm.reset();
         this.setSubmitState(false);
     },
