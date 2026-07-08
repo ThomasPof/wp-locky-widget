@@ -3,7 +3,7 @@
  * Plugin Name: Locky Widget Code Generator
  * Description: Widget de génération de codes pour cadenas Locky via l'API TTLock. Shortcode : [generateur_locky]
  * Version: 1.1.0
- * Author: Thomas Popof
+ * Author: Thomas Popoff
  */
 
 if (!defined('ABSPATH')) exit;
