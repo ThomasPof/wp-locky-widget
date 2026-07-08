@@ -99,9 +99,17 @@ class Locky_API {
         $json = json_decode(wp_remote_retrieve_body($response), true);
 
         if (isset($json['keyboardPwd'])) {
-            // Reconversion des millisecondes en secondes pour le formatage PHP
-            $display_start = date('Y-m-d H:i:s', $final_start_date / 1000);
-            $display_end   = date('Y-m-d H:i:s', $final_end_date / 1000);
+
+            // --- FIX AFFICHAGE & SMS TIMEZONE (PARIS UTC+2) ---
+            // Création d'objets DateTime basés sur les timestamps en millisecondes (divisés par 1000)
+            $date_start = new DateTime('@' . intval($final_start_date / 1000));
+            $date_start->setTimezone(new DateTimeZone('Europe/Paris'));
+            $display_start = $date_start->format('Y-m-d H:i');
+
+            $date_end = new DateTime('@' . intval($final_end_date / 1000));
+            $date_end->setTimezone(new DateTimeZone('Europe/Paris'));
+            $display_end = $date_end->format('Y-m-d H:i');
+            // --- FIN DU FIX ---
 
             // envoi du SMS via SMSFactor
             $sms_sent = self::lk_send_sms_notification($client_phone, $client_name, $json['keyboardPwd'], $display_start, $display_end);
@@ -154,11 +162,13 @@ class Locky_API {
         date_default_timezone_set('Europe/Paris');
 
         $today = date('Y-m-d');
-        $twelve_hours_ms = 12 * 3600 * 1000;
+        // prise des bi de 16h la veille et retour avant 11h
+        $late_delay = 11 * 3600 * 1000; // 11 heures en millisecondes
+        $early_delay = 8 * 3600 * 1000; // 8 heures en millisecondes
 
         // Calcul de la date de fin (toujours +12h après la fin du séjour)
         $end_timestamp_ms = strtotime($start_raw . " +{$duration_days} days 00:00:00") * 1000;
-        $final_end_date   = $end_timestamp_ms + $twelve_hours_ms;
+        $final_end_date   = $end_timestamp_ms + $late_delay;
 
         if ($start_raw === $today) {
             // SCÉNARIO AUJOURD'HUI : Pas de marge de -12h, juste "maintenant" arrondi
@@ -173,7 +183,7 @@ class Locky_API {
         } else {
             // SCÉNARIO FUTUR : On commence à minuit et on applique la marge de -12h
             $start_timestamp_ms = strtotime($start_raw . ' 00:00:00') * 1000;
-            $final_start_date   = $start_timestamp_ms - $twelve_hours_ms;
+            $final_start_date   = $start_timestamp_ms - $early_delay;
         }
 
         // Préparation des formats lisibles pour le retour du widget et le SMS
