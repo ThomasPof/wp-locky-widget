@@ -177,6 +177,14 @@ const LockyWidget = {
         this.elements.submitBtn.textContent = isLoading ? "Génération..." : "Obtenir mon code d'accès";
     },
 
+    setSubmitCancelState(isLoading) {
+        this.elements.cancelForm.style.pointerEvents = isLoading ? "none" : "auto";
+        this.elements.cancelForm.style.opacity = isLoading ? "0.6" : "1";
+        this.elements.cancelForm.style.cursor = isLoading ? "not-allowed" : "default";
+        this.elements.cancelForm.querySelector('button[type="submit"]').disabled = isLoading;
+        this.elements.cancelForm.querySelector('button[type="submit"]').textContent = isLoading ? "Annulation..." : "Annuler la réservation";
+    },
+
     /**
      * UI : Fermeture propre de la modale de réservation
      */
@@ -303,10 +311,13 @@ const LockyWidget = {
         this.elements.cancelModal.style.display = 'none';
         this.elements.cancelResultBox.style.display = 'none';
         this.elements.cancelForm.reset();
+        this.setSubmitCancelState(false);
     },
 
     handleCancelSubmit(e) {
         e.preventDefault();
+
+        this.setSubmitCancelState(true);
 
         const resId = this.elements.cancelResIdInput.value;
         const code  = document.getElementById('lk-cancelCode').value;
@@ -336,7 +347,9 @@ const LockyWidget = {
                     if (eventToTarget) eventToTarget.remove();
                 }
 
-                setTimeout(() => this.closeCancelModal(), 2000);
+                setTimeout(() => {
+                    this.closeCancelModal();
+                }, 2000);
             } else {
                 this.elements.cancelResultBox.style.backgroundColor = "#fee2e2";
                 this.elements.cancelResultBox.style.color = "#991b1b";
@@ -347,6 +360,9 @@ const LockyWidget = {
             this.elements.cancelResultBox.style.backgroundColor = "#fee2e2";
             this.elements.cancelResultBox.style.color = "#991b1b";
             this.elements.cancelResultBox.textContent = "Erreur de communication avec le serveur.";
+        })
+        .finally(() => {
+            this.setSubmitCancelState(false);
         });
     }
 };
