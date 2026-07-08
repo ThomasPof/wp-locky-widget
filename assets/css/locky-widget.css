@@ -1,4 +1,22 @@
 /* Intégration esthétique rapide dans ton widget */
+.lk-calendar-container {
+    margin-top: 25px;
+    display: none;
+}
+
+#lk-calendar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 15px;
+    font-size: 0.85em;
+}
+
+#lk-new-booking-btn-wrapper {
+    margin-top: 20px;
+    text-align: center;
+}
+
 #lk-calendar-component {
     max-width: 100%;
     background: #ffffff;

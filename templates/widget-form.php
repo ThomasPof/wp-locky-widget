@@ -8,10 +8,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-    <div class="lk-calendar-container" id="lk-global-calendar-wrapper" style="margin-top: 25px; display: none;">
-        <div id="lk-calendar-legend" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 15px; font-size: 0.85em;"></div>
+    <div class="lk-calendar-container" id="lk-global-calendar-wrapper">
+        <div id="lk-calendar-legend"></div>
         <div id="lk-calendar-component"></div>
-        <div id="lk-new-booking-btn-wrapper" style="margin-top: 20px; text-align: center;">
+        <div id="lk-new-booking-btn-wrapper">
             <button id="lk-new-booking-btn">
                 Réserver un biplace
             </button>
