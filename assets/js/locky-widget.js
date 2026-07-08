@@ -247,8 +247,8 @@ const LockyWidget = {
             firstDay: 1,
             headerToolbar: {
                 left: 'prev,next today',
-                center: 'title',
-                right: ''
+                center: '',
+                right: 'title'
             },
             buttonText: { today: "Aujourd'hui" },
             events: events,

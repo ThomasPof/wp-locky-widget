@@ -54,6 +54,7 @@ add_shortcode('generateur_locky', 'lk_render_widget_shortcode');
 function lk_render_widget_shortcode() {
     // Enregistrement et injection du script JS dédié uniquement quand le shortcode est présent
     wp_register_script('locky-widget-js', LK_PLUGIN_URL . 'assets/js/locky-widget.js', [], '1.0.0', true);
+    wp_enqueue_style('locky-widget-css', LK_PLUGIN_URL . 'assets/css/locky-widget.css', [], '1.0.0');
 
     // Passage de variables de PHP à JS de manière sécurisée (l'URL de la REST API)
     wp_localize_script('locky-widget-js', 'lockyWidgetData', [
