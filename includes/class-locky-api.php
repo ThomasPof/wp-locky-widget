@@ -75,7 +75,7 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Échec d\'authentification.'], 401);
         }
 
-        list($final_start_date, $final_end_date, $display_start, $display_end) = self::handle_star_end_dates($start_raw, $duration_days);
+        list($final_start_date, $final_end_date) = self::calculate_start_end_dates($start_raw, $duration_days);
 
         $body = [
             'clientId'        => LK_CLIENT_ID,
@@ -156,7 +156,7 @@ class Locky_API {
         return new WP_REST_Response(['success' => false, 'error' => $json['errmsg'] ?? 'Erreur de génération.'], 400);
     }
 
-    public static function handle_star_end_dates($start_raw, $duration_days) {
+    public static function calculate_start_end_dates($start_raw, $duration_days) {
         // --- STRATÉGIE DE TEMPS ET COMPENSATIONS ---
         $original_timezone = date_default_timezone_get();
         date_default_timezone_set('Europe/Paris');
