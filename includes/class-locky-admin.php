@@ -117,14 +117,14 @@ class Locky_Admin {
                     </tr>
                     <!-- AJOUT : Champ pour le SMS Automatique de Fin de Séjour -->
                     <tr>
-                        <th scope="row"><label for="locky_sms_checkout_template">SMS de fin de séjour (Départ à 10h)</label></th>
+                        <th scope="row"><label for="locky_sms_checkout_template">SMS de fin d'emprunt</label></th>
                         <td>
                             <?php
                             $default_sms = "Bonjour {client_name}, nous espérons que votre séjour s'est bien passé. Le départ s'effectue avant 11h. Merci !";
                             $sms_value = get_option('locky_sms_checkout_template', $default_sms);
                             ?>
                             <textarea id="locky_sms_checkout_template" name="locky_sms_checkout_template" rows="4" style="width: 100%; max-width: 25em;" class="large-text"><?php echo esc_textarea($sms_value); ?></textarea>
-                            <p class="description">Ce message est envoyé automatiquement tous les jours à 10h aux clients qui quittent le logement aujourd'hui.<br>Balise disponible : <code>{client_name}</code></p>
+                            <p class="description">Ce message est envoyé automatiquement tous les jours à 10h aux personnes qui ont emprunté un bi la veille.</p>
                         </td>
                     </tr>
                 </table>
