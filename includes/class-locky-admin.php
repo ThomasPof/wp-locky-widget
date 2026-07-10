@@ -52,6 +52,7 @@ class Locky_Admin {
         register_setting('locky_settings_group', 'lk_username');
         register_setting('locky_settings_group', 'lk_password');
         register_setting('locky_settings_group', 'lk_smsfactor_token');
+        register_setting('locky_settings_group', 'locky_door_code');
     }
 
     /**
@@ -105,6 +106,12 @@ class Locky_Admin {
                             <p class="description">Le token SMSFactor est utilisé pour l'envoi des codes par SMS. Assurez-vous de l'avoir configuré correctement.</p>
                         </td>
                     </tr>
+                    <tr>
+                        <th scope="row"><label for="locky_door_code">Code de la porte du local</label></th>
+                        <td>
+                            <input type="text" id="locky_door_code" name="locky_door_code" value="<?php echo esc_attr(get_option('locky_door_code')); ?>" class="regular-text">
+                            <p class="description">Ce code sera inclus dans le SMS envoyé au client pour accéder au local.</p>
+                        </td>
                 </table>
 
                 <?php submit_button('Sauvegarder les identifiants'); ?>

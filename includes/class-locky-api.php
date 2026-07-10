@@ -225,13 +225,17 @@ class Locky_API {
         // URL officielle de l'API v3 de SMSFactor pour l'envoi de SMS uniques
         $sms_url = 'https://api.smsfactor.com/send';
 
+        // récupérer le code de la porte en BDD :
+        $doorCode = get_option('locky_door_code', ''); // valeur par défaut vide si non configuré
+
         // 2. Formatage du texte du message (Attention aux 160 caractères par SMS standard)
         $message_text = sprintf(
             "Bonjour %s, votre code d'acces pour le cadenas est : %s. Valide du %s au %s.",
             $name,
             $code,
             $startDate,
-            $endDate
+            $endDate,
+            $doorCode
         );
 
         // 4. Construction de l'URL finale avec les paramètres GET requis
