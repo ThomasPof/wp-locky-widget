@@ -75,7 +75,7 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Échec d\'authentification.'], 401);
         }
 
-        list($final_start_date, $final_end_date) = self::calculate_start_end_dates($start_raw, $duration_days);
+        list($final_start_date, $final_end_date) = self::calculate_start_end_dates($start_raw, $duration_days, date('Y-m-d'));
 
         $body = [
             'clientId'        => LK_CLIENT_ID,
@@ -156,12 +156,11 @@ class Locky_API {
         return new WP_REST_Response(['success' => false, 'error' => $json['errmsg'] ?? 'Erreur de génération.'], 400);
     }
 
-    public static function calculate_start_end_dates($start_raw, $duration_days) {
+    public static function calculate_start_end_dates($start_raw, $duration_days, $today = null) {
         // --- STRATÉGIE DE TEMPS ET COMPENSATIONS ---
         $original_timezone = date_default_timezone_get();
         date_default_timezone_set('Europe/Paris');
 
-        $today = date('Y-m-d');
         // prise des bi de 16h (-8h) la veille et retour avant 9h
         $end_offset = 9 * 3600 * 1000; // 9 heures en millisecondes
         $start_offset = 8 * 3600 * 1000; // 8 heures en millisecondes
@@ -170,7 +169,7 @@ class Locky_API {
         $end_timestamp_ms = strtotime($start_raw . " +{$duration_days} days 00:00:00") * 1000;
         $final_end_date   = $end_timestamp_ms + $end_offset;
 
-        if ($start_raw === $today) {
+        if ($today && $start_raw === $today) {
             // SCÉNARIO AUJOURD'HUI : On utilise le timestamp PHP actuel (qui respecte Europe/Paris)
             $local_time = time();
             $minutes    = intval(date('i', $local_time));
@@ -334,7 +333,7 @@ class Locky_API {
 
         // 1. On cherche la réservation pour vérifier le code
         $reservation = $wpdb->get_row($wpdb->prepare(
-            "SELECT generated_code, generated_code_id, lock_id FROM $table_name WHERE id = %d",
+            "SELECT generated_code, generated_code_id, lock_id, start_date, duration_days FROM $table_name WHERE id = %d",
             $reservation_id
         ));
 
@@ -347,12 +346,23 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Le code saisi est incorrect.'], 403);
         }
 
-        // Vérification si le code a déjà été activé sur le cadenas via l'API TTLock
-        $is_activated = self::lk_is_code_already_activated($reservation->lock_id, $reservation->generated_code_id);
+        // --- CALCUL DES TIMESTAMPS EXACTS DE VALIDITÉ ---
+        // On réutilise ta fonction pour générer à l'identique les formats start/end en ms
+        list($final_start_date_ms, $final_end_date_ms) = self::calculate_start_end_dates($reservation->start_date, $reservation->duration_days);
+        // ------------------------------------------------
+
+        // --- VÉRIFICATION PAR LES LOGS D'OUVERTURE ---
+        $is_activated = self::lk_is_code_already_activated(
+            $reservation->lock_id,
+            $reservation->generated_code,
+            $final_start_date_ms,
+            $final_end_date_ms
+        );
+
         if ($is_activated) {
             return new WP_REST_Response([
                 'success' => false,
-                'error'   => 'Impossible d\'annuler : ce code d\'accès a déjà été activé sur le cadenas.'
+                'error'   => 'Impossible d\'annuler : ce code d\'accès a déjà été utilisé pour ouvrir le cadenas.'
             ], 400);
         }
 
@@ -425,26 +435,24 @@ class Locky_API {
     }
 
     /**
-     * Vérifie si un code a déjà été activé (utilisé) sur le cadenas via l'API TTLock
-     *
-     * @param string $lock_id             L'ID du cadenas
-     * @param string $generated_code_id   L'ID du code d'accès (keyboardPwdId)
-     * @return bool                       True si le code a déjà été activé/utilisé, False sinon.
+     * Vérifie si le code a réellement été utilisé pour ouvrir le cadenas
+     * en scannant l'historique sur la plage exacte de validité du code
      */
-    public static function lk_is_code_already_activated($lock_id, $generated_code_id) {
+    public static function lk_is_code_already_activated($lock_id, $generated_code, $final_start_date_ms, $final_end_date_ms) {
         $token = self::get_access_token();
-        if (!$token) {
-            return false;
-        }
+        if (!$token) return false;
 
-        $url = 'https://api.ttlock.com/v3/keyboardPwd/detail';
+        $url = 'https://api.ttlock.com/v3/lockRecord/list';
 
         $body = [
-            'clientId'      => LK_CLIENT_ID,
-            'accessToken'   => $token,
-            'lockId'        => $lock_id,
-            'keyboardPwdId' => $generated_code_id,
-            'date'          => time() * 1000
+            'clientId'    => LK_CLIENT_ID,
+            'accessToken' => $token,
+            'lockId'      => $lock_id,
+            'startDate'   => $final_start_date_ms, // Début de validité du code (avec ton offset de 8h la veille)
+            'endDate'     => $final_end_date_ms,   // Fin de validité du code (avec ton offset de 9h le lendemain)
+            'pageNo'      => 1,
+            'pageSize'    => 100, // On élargit pour être sûr de capter le passage dans la plage
+            'date'        => time() * 1000
         ];
 
         $response = wp_remote_post($url, [
@@ -453,18 +461,33 @@ class Locky_API {
         ]);
 
         if (is_wp_error($response)) {
-            error_log('Locky TTLock Status Error: ' . $response->get_error_message());
             return false;
         }
 
         $res_body = json_decode(wp_remote_retrieve_body($response), true);
 
-        // TTLock renvoie un statut de code. Généralement :
-        // 1 = Non activé (Not activated)
-        // 2 = Activé / Utilisé (Activated)
-        // Si le statut vaut 2, le client a déjà tapé son code au moins une fois.
-        if (isset($res_body['status']) && intval($res_body['status']) === 2) {
-            return true;
+        if (isset($res_body['list']) && is_array($res_body['list'])) {
+            foreach ($res_body['list'] as $record) {
+
+                // 1. On extrait et nettoie les valeurs du log
+                $log_pwd     = isset($record['keyboardPwd']) ? trim($record['keyboardPwd']) : '';
+                $log_success = isset($record['success']) ? intval($record['success']) : 0;
+
+                // 2. FILTRE STRICT : Le code doit matcher ET l'ouverture doit être un succès (success === 1)
+                if ($log_pwd === trim($generated_code) && $log_success === 1) {
+                    error_log("Locky Security: Tentative d'annulation bloquée. Le code {$generated_code} a ouvert le cadenas avec succès.");
+                    return true; // Match parfait ! Le client est entré, on bloque l'annulation.
+                }
+            }
+        }
+
+        if (isset($res_body['list']) && is_array($res_body['list'])) {
+            foreach ($res_body['list'] as $record) {
+                // Si le code brute correspond à un log d'ouverture
+                if (isset($record['keyboardPwd']) && trim($record['keyboardPwd']) === trim($generated_code)) {
+                    return true;
+                }
+            }
         }
 
         return false;
