@@ -175,12 +175,9 @@ function lk_process_daily_checkout_sms() {
 
     if (!empty($departures)) {
         foreach ($departures as $res) {
-            // Remplacement dynamique des variables du template
-            $message = str_replace('{client_name}', $res->client_name, $sms_template);
-
             // Appel de la méthode d'envoi de SMS de ta classe d'API
-            if (method_exists('Locky_API', 'lk_send_sms')) {
-                Locky_API::lk_send_sms_notification($res->client_phone, $message);
+            if (method_exists('Locky_API', 'lk_send_sms_notification')) {
+                Locky_API::lk_send_sms_notification($res->client_phone, $sms_template);
             } else {
                 error_log("Locky Cron Error: La méthode Locky_API::lk_send_sms_notification n'existe pas.");
             }
