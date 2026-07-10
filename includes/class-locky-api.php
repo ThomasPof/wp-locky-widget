@@ -207,10 +207,7 @@ class Locky_API {
      * Envoie le code d'accès par SMS via l'API de SMSFactor
      *
      * @param string $phone     Numéro de téléphone du destinataire (format international ex: +33612345678)
-     * @param string $name      Nom/Prénom du client
-     * @param string $code      Code généré par TTLock
-     * @param string $startDate Date de début formatée (ex: jeudi 6 juillet 2026)
-     * @param string $endDate   Date de fin formatée
+     * @param string $message   Message à envoyer (texte brut, pas de HTML)
      * @return bool             True si envoyé avec succès, false sinon
      */
     public static function lk_send_sms_notification($phone, $message) {
@@ -254,7 +251,7 @@ class Locky_API {
         $response_code = wp_remote_retrieve_response_code($response);
         $response_body = json_decode(wp_remote_retrieve_body($response), true);
 
-        if ($response_code === 200 && isset($response_body['status']) && $response_body['status'] === 'OK') {
+        if ($response_code === 200 && isset($response_body['status']) && (int)$response_body['status'] === 1) {
             return true; // SMS envoyé avec succès !
         } else {
             error_log('Locky SMS API Error: Code ' . $response_code . ' - ' . print_r($response_body, true));
