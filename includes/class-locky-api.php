@@ -111,8 +111,17 @@ class Locky_API {
             $display_end = wp_date('l j F \à H:i', $date_end->getTimestamp(), new DateTimeZone('Europe/Paris'));
             // --- FIN DU FIX ---
 
+            $door_code = get_option('locky_door_code', '');
+            $message_text = sprintf(
+                "Bonjour %s, votre code d'acces pour le cadenas est : %s. Valide du %s au %s. Code porte du local : %s.",
+                $client_name,
+                $json['keyboardPwd'],
+                $display_start,
+                $display_end,
+                $door_code
+            );
             // envoi du SMS via SMSFactor
-            $sms_sent = self::lk_send_sms_notification($client_phone, $client_name, $json['keyboardPwd'], $display_start, $display_end);
+            $sms_sent = self::lk_send_sms_notification($client_phone, $message_text);
             if (!$sms_sent) {
                 error_log('Locky SMS Error: Échec de l\'envoi du SMS pour le code d\'accès. Numéro: ' . $client_phone);
             }
@@ -204,7 +213,7 @@ class Locky_API {
      * @param string $endDate   Date de fin formatée
      * @return bool             True si envoyé avec succès, false sinon
      */
-    public static function lk_send_sms_notification($phone, $name, $code, $startDate, $endDate) {
+    public static function lk_send_sms_notification($phone, $message) {
         // 1. Récupération du jeton API (à ajouter dans tes réglages, ou via une constante)
         // Par sécurité, nous pouvons réutiliser un champ option ou définir une constante temporaire
         $api_token = LK_SMSFACTOR_TOKEN; // À configurer dans les options du plugin
@@ -224,29 +233,12 @@ class Locky_API {
         // URL officielle de l'API v3 de SMSFactor pour l'envoi de SMS uniques
         $sms_url = 'https://api.smsfactor.com/send';
 
-        // récupérer le code de la porte en BDD :
-        $doorCode = get_option('locky_door_code', ''); // valeur par défaut vide si non configuré
-
-        // 2. Formatage du texte du message (Attention aux 160 caractères par SMS standard)
-        $message_text = sprintf(
-            "Bonjour %s, votre code d'acces pour le cadenas est : %s. Valide du %s au %s. Code porte du local : %s.",
-            $name,
-            $code,
-            $startDate,
-            $endDate,
-            $doorCode
-        );
-
         // 4. Construction de l'URL finale avec les paramètres GET requis
-
         $sms_url = add_query_arg([
-            'text'  => $message_text,
+            'text'  => $message,
             'to'    => $phone,
             'token' => $api_token
         ], 'https://api.smsfactor.com/send');
-
-        // Optionnel : Si tu veux ajouter l'émetteur personnalisé, l'API GET de SMSFactor utilise généralement le paramètre 'sender'
-        // $sms_url = add_query_arg('sender', 'LOCKY', $sms_url);
 
         // 5. Envoi de la requête GET via WordPress
         $response = wp_remote_get($sms_url, [

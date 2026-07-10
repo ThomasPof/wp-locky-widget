@@ -44,7 +44,7 @@ class Locky_Admin {
     }
 
     /**
-     * Enregistre les 4 paramètres dans la table wp_options via l'API Settings de WP
+     * Enregistre les paramètres dans la table wp_options via l'API Settings de WP
      */
     public static function register_locky_settings() {
         register_setting('locky_settings_group', 'lk_client_id');
@@ -53,6 +53,8 @@ class Locky_Admin {
         register_setting('locky_settings_group', 'lk_password');
         register_setting('locky_settings_group', 'lk_smsfactor_token');
         register_setting('locky_settings_group', 'locky_door_code');
+        // AJOUT : Enregistrement du template SMS pour le cron de départ
+        register_setting('locky_settings_group', 'locky_sms_checkout_template');
     }
 
     /**
@@ -112,6 +114,19 @@ class Locky_Admin {
                             <input type="text" id="locky_door_code" name="locky_door_code" value="<?php echo esc_attr(get_option('locky_door_code')); ?>" class="regular-text">
                             <p class="description">Ce code sera inclus dans le SMS envoyé au client pour accéder au local.</p>
                         </td>
+                    </tr>
+                    <!-- AJOUT : Champ pour le SMS Automatique de Fin de Séjour -->
+                    <tr>
+                        <th scope="row"><label for="locky_sms_checkout_template">SMS de fin de séjour (Départ à 10h)</label></th>
+                        <td>
+                            <?php
+                            $default_sms = "Bonjour {client_name}, nous espérons que votre séjour s'est bien passé. Le départ s'effectue avant 11h. Merci !";
+                            $sms_value = get_option('locky_sms_checkout_template', $default_sms);
+                            ?>
+                            <textarea id="locky_sms_checkout_template" name="locky_sms_checkout_template" rows="4" style="width: 100%; max-width: 25em;" class="large-text"><?php echo esc_textarea($sms_value); ?></textarea>
+                            <p class="description">Ce message est envoyé automatiquement tous les jours à 10h aux clients qui quittent le logement aujourd'hui.<br>Balise disponible : <code>{client_name}</code></p>
+                        </td>
+                    </tr>
                 </table>
 
                 <?php submit_button('Sauvegarder les identifiants'); ?>
@@ -231,15 +246,12 @@ class Locky_Admin {
      * Enregistre et charge le script JS pour l'administration
      */
     public static function enqueue_admin_assets($hook) {
-        // On charge le script uniquement si on est sur la page de l'historique ou des réglages Locky
         if (strpos($hook, 'locky-reservations') === false && strpos($hook, 'locky-settings') === false) {
             return;
         }
 
-        // Enregistre ton nouveau fichier JS admin
         wp_register_script('locky-admin-js', LK_PLUGIN_URL . 'assets/js/locky-admin.js', [], '1.0.0', true);
 
-        // Passe l'URL de l'API REST de manière sécurisée au JS
         wp_localize_script('locky-admin-js', 'lockyAdminData', [
             'root_url' => esc_url_raw(rest_url('locky-widget/v1/'))
         ]);

@@ -70,7 +70,7 @@ function lk_render_widget_shortcode() {
 }
 
 /**
- * Hook d'activation : Création de la table de réservation personnalisée
+ * Hook d'activation : Création de la table de réservation personnalisée + Planification du Cron Job
  */
 register_activation_hook(__FILE__, 'lk_activate_locky_plugin');
 
@@ -96,9 +96,96 @@ function lk_activate_locky_plugin() {
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
+
+    // Planification du Cron Job lors de l'activation
+    lk_schedule_checkout_sms_cron();
 }
+
+/**
+ * Hook de désactivation : Nettoyage du Cron Job
+ */
+register_deactivation_hook(__FILE__, 'lk_clear_checkout_sms_cron');
 
 // Initialisation de la page d'administration (uniquement dans l'espace d'administration)
 if (is_admin()) {
     Locky_Admin::init();
+}
+
+
+/* ==========================================================================
+   LOGIQUE DU CRON JOB (DÉPART À 10H)
+   ========================================================================== */
+
+/**
+ * Configure la tâche planifiée quotidienne à 10h00 heure de Paris
+ */
+function lk_schedule_checkout_sms_cron() {
+    if (!wp_next_scheduled('lk_checkout_sms_daily_event')) {
+        $timezone = new DateTimeZone('Europe/Paris');
+        $date = new DateTime('now', $timezone);
+        $date->setTime(10, 0, 0);
+
+        // Si 10h est déjà passé aujourd'hui, on commence demain à 10h
+        if ($date->getTimestamp() < time()) {
+            $date->modify('+1 day');
+        }
+
+        wp_schedule_event($date->getTimestamp(), 'daily', 'lk_checkout_sms_daily_event');
+    }
+}
+
+/**
+ * Nettoie le cron de la base de données WordPress à la désactivation
+ */
+function lk_clear_checkout_sms_cron() {
+    $timestamp = wp_next_scheduled('lk_checkout_sms_daily_event');
+    if ($timestamp) {
+        wp_unschedule_event($timestamp, 'lk_checkout_sms_daily_event');
+    }
+}
+
+/**
+ * Logique d'exécution du traitement quotidien à 10h
+ */
+add_action('lk_checkout_sms_daily_event', 'lk_process_daily_checkout_sms');
+
+function lk_process_daily_checkout_sms() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'locky_reservations';
+
+    $original_timezone = date_default_timezone_get();
+    date_default_timezone_set('Europe/Paris');
+    $today = date('Y-m-d');
+
+    // Récupération du message rédigé dans l'admin
+    $sms_template = get_option('locky_sms_checkout_template', '');
+    if (empty($sms_template)) {
+        date_default_timezone_set($original_timezone);
+        return;
+    }
+
+    // Récupération des départs du jour (start_date + duration_days = aujourd'hui)
+    $departures = $wpdb->get_results($wpdb->prepare(
+        "SELECT client_name, client_phone
+         FROM $table_name
+         WHERE DATE_ADD(start_date, INTERVAL CAST(duration_days AS SIGNED) DAY) = %s
+         AND client_phone IS NOT NULL AND client_phone != ''",
+        $today
+    ));
+
+    if (!empty($departures)) {
+        foreach ($departures as $res) {
+            // Remplacement dynamique des variables du template
+            $message = str_replace('{client_name}', $res->client_name, $sms_template);
+
+            // Appel de la méthode d'envoi de SMS de ta classe d'API
+            if (method_exists('Locky_API', 'lk_send_sms')) {
+                Locky_API::lk_send_sms_notification($res->client_phone, $message);
+            } else {
+                error_log("Locky Cron Error: La méthode Locky_API::lk_send_sms_notification n'existe pas.");
+            }
+        }
+    }
+
+    date_default_timezone_set($original_timezone);
 }
