@@ -104,11 +104,11 @@ class Locky_API {
             // Création d'objets DateTime basés sur les timestamps en millisecondes (divisés par 1000)
             $date_start = new DateTime('@' . intval($final_start_date / 1000));
             $date_start->setTimezone(new DateTimeZone('Europe/Paris'));
-            $display_start = $date_start->format('Y-m-d H:i');
+            $display_start = $date_start->format('l j F \à H:i');
 
             $date_end = new DateTime('@' . intval($final_end_date / 1000));
             $date_end->setTimezone(new DateTimeZone('Europe/Paris'));
-            $display_end = $date_end->format('Y-m-d H:i');
+            $display_end = $date_end->format('l j F \à H:i');
             // --- FIN DU FIX ---
 
             // envoi du SMS via SMSFactor
