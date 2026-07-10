@@ -342,9 +342,18 @@ class Locky_API {
             return new WP_REST_Response(['success' => false, 'error' => 'Réservation introuvable.'], 404);
         }
 
-        // 2. Vérification stricte du code d'accès
+        // 2. Vérification du code d'accès
         if (trim($reservation->generated_code) !== trim($user_code)) {
             return new WP_REST_Response(['success' => false, 'error' => 'Le code saisi est incorrect.'], 403);
+        }
+
+        // Vérification si le code a déjà été activé sur le cadenas via l'API TTLock
+        $is_activated = self::lk_is_code_already_activated($reservation->lock_id, $reservation->generated_code_id);
+        if ($is_activated) {
+            return new WP_REST_Response([
+                'success' => false,
+                'error'   => 'Impossible d\'annuler : ce code d\'accès a déjà été activé sur le cadenas.'
+            ], 400);
         }
 
         // revocation du code sur TTLock
@@ -412,6 +421,52 @@ class Locky_API {
         }
 
         error_log('Locky TTLock Revocation API Refusal: ' . print_r($res_body, true));
+        return false;
+    }
+
+    /**
+     * Vérifie si un code a déjà été activé (utilisé) sur le cadenas via l'API TTLock
+     *
+     * @param string $lock_id             L'ID du cadenas
+     * @param string $generated_code_id   L'ID du code d'accès (keyboardPwdId)
+     * @return bool                       True si le code a déjà été activé/utilisé, False sinon.
+     */
+    public static function lk_is_code_already_activated($lock_id, $generated_code_id) {
+        $token = self::get_access_token();
+        if (!$token) {
+            return false;
+        }
+
+        $url = 'https://api.ttlock.com/v3/keyboardPwd/detail';
+
+        $body = [
+            'clientId'      => LK_CLIENT_ID,
+            'accessToken'   => $token,
+            'lockId'        => $lock_id,
+            'keyboardPwdId' => $generated_code_id,
+            'date'          => time() * 1000
+        ];
+
+        $response = wp_remote_post($url, [
+            'timeout' => 15,
+            'body'    => $body
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('Locky TTLock Status Error: ' . $response->get_error_message());
+            return false;
+        }
+
+        $res_body = json_decode(wp_remote_retrieve_body($response), true);
+
+        // TTLock renvoie un statut de code. Généralement :
+        // 1 = Non activé (Not activated)
+        // 2 = Activé / Utilisé (Activated)
+        // Si le statut vaut 2, le client a déjà tapé son code au moins une fois.
+        if (isset($res_body['status']) && intval($res_body['status']) === 2) {
+            return true;
+        }
+
         return false;
     }
 }
