@@ -171,14 +171,14 @@ class Locky_API {
         $final_end_date   = $end_timestamp_ms + $end_offset;
 
         if ($start_raw === $today) {
-            // SCÉNARIO AUJOURD'HUI : Pas de marge de -12h, juste "maintenant" arrondi
-            $local_time = current_time('timestamp');
+            // SCÉNARIO AUJOURD'HUI : On utilise le timestamp PHP actuel (qui respecte Europe/Paris)
+            $local_time = time();
             $minutes    = intval(date('i', $local_time));
 
-            // Arrondi à la demi-heure inférieure pour Sciener
+            // Arrondi à la demi-heure inférieure
             $round_time = ($minutes >= 30) ? date('H:30:00', $local_time) : date('H:00:00', $local_time);
 
-            // final_start_date prend directement la valeur arrondie actuelle, sans soustraire 12h
+            // Construction du timestamp final en millisecondes
             $final_start_date = strtotime($start_raw . ' ' . $round_time) * 1000;
         } else {
             // SCÉNARIO FUTUR : On commence à minuit et on applique la marge de -12h
