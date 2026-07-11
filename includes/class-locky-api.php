@@ -230,11 +230,14 @@ class Locky_API {
         // URL officielle de l'API v3 de SMSFactor pour l'envoi de SMS uniques
         $sms_url = 'https://api.smsfactor.com/send';
 
+        $sender_name = get_option('locky_sender_name', substr(preg_replace('/[^A-Za-z0-9]/', '', get_bloginfo('name')), 0, 11));
+
         // 4. Construction de l'URL finale avec les paramètres GET requis
         $sms_url = add_query_arg([
             'text'  => $message,
             'to'    => $phone,
-            'token' => $api_token
+            'token' => $api_token,
+            'sender' => $sender_name
         ], 'https://api.smsfactor.com/send');
 
         // 5. Envoi de la requête GET via WordPress

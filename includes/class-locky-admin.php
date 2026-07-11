@@ -55,6 +55,7 @@ class Locky_Admin {
         register_setting('locky_settings_group', 'locky_door_code');
         // AJOUT : Enregistrement du template SMS pour le cron de départ
         register_setting('locky_settings_group', 'locky_sms_checkout_template');
+        register_setting('locky_settings_group', 'locky_sender_name');
     }
 
     /**
@@ -99,6 +100,13 @@ class Locky_Admin {
                         <td>
                             <input type="password" id="lk_password" name="lk_password" value="<?php echo esc_attr(get_option('lk_password')); ?>" class="regular-text">
                             <p class="description">Le mot de passe sera masqué pour des raisons de sécurité.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="locky_sender_name">Nom de l'expéditeur SMS</label></th>
+                        <td>
+                            <input type="text" id="locky_sender_name" name="locky_sender_name" value="<?php echo esc_attr(get_option('locky_sender_name', substr(preg_replace('/[^A-Za-z0-9]/', '', get_bloginfo('name')), 0, 11))); ?>" class="regular-text">
+                            <p class="description">Le nom de l'expéditeur qui apparaîtra sur les SMS envoyés via SMSFactor. Maximum 11 caractères alphanumériques.</p>
                         </td>
                     </tr>
                     <tr>
