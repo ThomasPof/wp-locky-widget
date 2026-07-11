@@ -65,7 +65,10 @@ class Locky_Admin {
         ?>
         <div class="wrap">
             <h1>Configuration de l'API Locky / TTLock</h1>
-            <p class="description">Renseignez ici vos identifiants de l'API TTLock pour permettre au widget de communiquer avec vos cadenas.</p>
+            <p class="description">
+                Pour que le plugin fonctionne correctement, vous devez renseigner vos identifiants TTLock et SMSFactor ci-dessous.<br>
+                Ces informations sont stockées dans la base de données WordPress et ne sont pas exposées publiquement.
+            </p>
 
             <hr class="wp-header-end">
 
@@ -137,7 +140,7 @@ class Locky_Admin {
                     </tr>
                 </table>
 
-                <?php submit_button('Sauvegarder les identifiants'); ?>
+                <?php submit_button('Sauvegarder'); ?>
             </form>
         </div>
         <?php
