@@ -137,9 +137,8 @@ const LockyWidget = {
 
 		data.locks.forEach((lock) => {
 			const option = document.createElement("option");
-			option.value = lock.lockId;
-			option.textContent =
-				lock.lockAlias || lock.lockName || `Cadenas #${lock.lockId}`;
+			option.textContent = lock.lockAlias || lock.lockName || `Cadenas #${lock.lockId}`;
+			option.value = lock.lockId + '|' + option.textContent;
 
 			this.lockNames[lock.lockId] = option.textContent;
 			this.elements.lockSelect.appendChild(option);

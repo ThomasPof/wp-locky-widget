@@ -49,7 +49,16 @@ class Locky_API {
     }
 
     public static function handle_generate_code($request) {
-        $lock_id       = $request->get_param('lockId');
+        // Récupération de la valeur brute du formulaire (ex: "31322958|Casier 4 Golden")
+        $lock_data_raw = $request->get_param('lockId');
+        $lock_id = '';
+        $lock_name = 'Cadenas'; // Valeur par défaut si pas de nom
+        if (strpos($lock_data_raw, '|') !== false) {
+            // On sépare l'ID et le Nom
+            list($lock_id, $lock_name) = explode('|', $lock_data_raw);
+        } else {
+            $lock_id = $lock_data_raw;
+        }
         $start_raw     = $request->get_param('startDate'); // Reçoit "YYYY-MM-DD"
         $duration_days = intval($request->get_param('durationDays'));
 
@@ -113,8 +122,9 @@ class Locky_API {
 
             $door_code = get_option('locky_door_code', '');
             $message_text = sprintf(
-                "Bonjour %s, votre code d'acces pour le cadenas est : %s. Valide du %s au %s. Code porte du local : %s.",
+                "Bonjour %s, votre code d'acces pour le %s est : %s. Valide du %s au %s. Code porte du local : %s.",
                 $client_name,
+                $lock_name,
                 $json['keyboardPwd'],
                 $display_start,
                 $display_end,
