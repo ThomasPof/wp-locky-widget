@@ -113,17 +113,17 @@ class Locky_API {
             // Création d'objets DateTime basés sur les timestamps en millisecondes (divisés par 1000)
             $date_start = new DateTime('@' . intval($final_start_date / 1000));
             $date_start->setTimezone(new DateTimeZone('Europe/Paris'));
-            $display_start = wp_date('l j F \à H:i', $date_start->getTimestamp(), new DateTimeZone('Europe/Paris'));
+            // format de date : sam 11 juil à 16:00
+            $display_start = wp_date('D j M \à H:i', $date_start->getTimestamp(), new DateTimeZone('Europe/Paris'));
 
             $date_end = new DateTime('@' . intval($final_end_date / 1000));
             $date_end->setTimezone(new DateTimeZone('Europe/Paris'));
-            $display_end = wp_date('l j F \à H:i', $date_end->getTimestamp(), new DateTimeZone('Europe/Paris'));
+            $display_end = wp_date('D j M \à H:i', $date_end->getTimestamp(), new DateTimeZone('Europe/Paris'));
             // --- FIN DU FIX ---
 
             $door_code = get_option('locky_door_code', '');
             $message_text = sprintf(
-                "Bonjour %s, votre code d'acces pour le %s est : %s. Valide du %s au %s. Code porte du local : %s.",
-                $client_name,
+                "Bonjour, ton code pour le %s est : %s. Valide du %s au %s. Code du local : %s",
                 $lock_name,
                 $json['keyboardPwd'],
                 $display_start,
