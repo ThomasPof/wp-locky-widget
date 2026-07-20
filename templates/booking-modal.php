@@ -33,6 +33,7 @@
                     <option value="1">1 jour</option>
                     <option value="2">2 jours</option>
                     <option value="3">3 jours</option>
+                    <option value="6">6 jours - Qbi</option>
                 </select>
             </div>
 
