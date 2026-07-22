@@ -166,7 +166,8 @@ const LockyWidget = {
 				if (data.success) {
 					this.elements.resultBox.innerHTML = `
                     Votre code vous a été envoyé par SMS : <strong>${data.code}</strong><br>
-                    <small>Valide du ${data.startDate} au ${data.endDate}</small>
+                    <small>Valide du ${data.startDate} au ${data.endDate}</small><br><br>
+										<strong>Vérifie le matos AVANT de voler. En cas de dégradation, vous serez tenu responsable si cela est découvert par le prochain emprunteur.</strong>
                 `;
 					this.elements.lockForm.style.display = "none"; // Cache le formulaire après succès
 					// get all events (with new reservation) and re-render the calendar
